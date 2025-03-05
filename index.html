@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Desktop Calendar</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
+    <h1 class="text-xl font-bold text-center mb-4">Synchronized Calendar</h1>
+    <div class="mb-4">
+        <input type="date" id="eventDate" class="w-full p-2 border rounded-lg" />
+    </div>
+    <div class="mb-4">
+        <input type="text" id="eventName" placeholder="Event Name" class="w-full p-2 border rounded-lg" />
+    </div>
+    <button id="addEvent" class="bg-blue-500 text-white p-2 rounded-lg w-full hover:bg-blue-600">Add Event</button>
+    <ul id="eventList" class="mt-4"></ul>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission !== "granted") {
+                    alert("Notifications are disabled. Enable them for reminders.");
+                }
+            });
+        }
+        loadEvents();
+    });
+
+    document.getElementById("addEvent").addEventListener("click", () => {
+        const date = document.getElementById("eventDate").value;
+        const name = document.getElementById("eventName").value;
+        
+        if (date && name) {
+            const list = document.getElementById("eventList");
+            const listItem = document.createElement("li");
+            listItem.className = "p-2 border-b flex justify-between items-center bg-blue-100 rounded-lg mb-2";
+            listItem.textContent = `${date} - ${name}`;
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+            deleteBtn.className = "text-red-500 hover:underline ml-2";
+            deleteBtn.onclick = () => {
+                listItem.remove();
+                saveEvents();
+            };
+
+            listItem.appendChild(deleteBtn);
+            list.appendChild(listItem);
+            saveEvents();
+
+            if ("Notification" in window && Notification.permission === "granted") {
+                const now = new Date();
+                const eventDate = new Date(date);
+                const timeDiff = eventDate.getTime() - now.getTime();
+                
+                if (timeDiff > 0) {
+                    setTimeout(() => {
+                        new Notification("Event Reminder", {
+                            body: `Reminder: ${name} on ${date}`,
+                            icon: "https://via.placeholder.com/48",
+                        });
+                    }, timeDiff);
+                }
+            }
+        } else {
+            alert("Please enter both date and event name.");
+        }
+    });
+
+    function saveEvents() {
+        const events = [];
+        document.querySelectorAll("#eventList li").forEach(item => {
+            events.push(item.textContent.replace("Delete", "").trim());
+        });
+        localStorage.setItem("events", JSON.stringify(events));
+    }
+
+    function loadEvents() {
+        const events = JSON.parse(localStorage.getItem("events")) || [];
+        const list = document.getElementById("eventList");
+        events.forEach(event => {
+            const listItem = document.createElement("li");
+            listItem.className = "p-2 border-b flex justify-between items-center bg-blue-100 rounded-lg mb-2";
+            listItem.textContent = event;
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+            deleteBtn.className = "text-red-500 hover:underline ml-2";
+            deleteBtn.onclick = () => {
+                listItem.remove();
+                saveEvents();
+            };
+
+            listItem.appendChild(deleteBtn);
+            list.appendChild(listItem);
+        });
+    }
+</script>
+</body>
+</html>
